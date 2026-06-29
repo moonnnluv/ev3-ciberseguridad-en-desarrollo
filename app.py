@@ -1,8 +1,31 @@
 from flask import Flask
+from flask_talisman import Talisman
 from prometheus_flask_exporter import PrometheusMetrics
 
 app = Flask(__name__)
 metrics = PrometheusMetrics(app)
+
+# Configura cabeceras de seguridad HTTP para mitigar advertencias de OWASP ZAP:
+# - X-Frame-Options (anti-clickjacking)
+# - X-Content-Type-Options (anti MIME-sniffing)
+# - Content-Security-Policy
+# - Strict-Transport-Security
+Talisman(
+    app,
+    force_https=False,        # deshabilitado porque corremos en HTTP local/Docker
+    content_security_policy={
+        "default-src": "'self'",
+        "script-src": "'self'",
+    },
+    frame_options="DENY",
+    x_content_type_options=True,
+    referrer_policy="strict-origin-when-cross-origin",
+    permissions_policy={
+        "geolocation": "()",
+        "microphone": "()",
+        "camera": "()",
+    },
+)
 
 
 @app.route("/")
